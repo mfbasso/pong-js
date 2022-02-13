@@ -5,6 +5,7 @@ const player_defaults = {
   height: 100,
   color: "white",
   key: undefined,
+  bot: true,
 };
 let player_1, player_2, ball, game_velocity = 5;
 
@@ -68,20 +69,24 @@ const initPlayers = () => {
 const startListeners = () => {
   document.addEventListener("keydown", ({ keyCode }) => {
     if (keyCode === 87 || keyCode === 83) {
+      player_1.bot = false;
       player_1.key = keyCode;
     }
 
     if (keyCode === 38 || keyCode === 40) {
+      player_2.bot = false;
       player_2.key = keyCode;
     }
   });
 
   document.addEventListener("keyup", ({ keyCode }) => {
     if (keyCode === 87 || keyCode === 83) {
+      player_1.bot = false;
       player_1.key = undefined;
     }
 
     if (keyCode === 38 || keyCode === 40) {
+      player_2.bot = false;
       player_2.key = undefined;
     }
   });
@@ -98,13 +103,27 @@ const startGame = () => {
 };
 
 const playerMoviments = (player, keyUp, keydown) => {
+  let multiplier = 3;
+  if (player.bot) {
+    if (player === player_1 && ball.dx === -1) {
+      multiplier = 1;
+    } else if (player === player_2 && ball.dx === +1) {
+      multiplier = 1;
+    }
+
+    if (player.y > ball.y - (player.height / 2)) {
+      player.key = keyUp;
+    } else if (player.y < ball.y - (player.height / 2)) {
+      player.key = keydown;
+    }
+  } else {
+    multiplier = 1;
+  }
+
   if (player.key === keyUp && player.y > 0) {
-    player.y -= 5;
-  } else if (
-    player.key === keydown &&
-    player.y + player.height < canvas.height
-  ) {
-    player.y += 5;
+    player.y -= game_velocity / multiplier;
+  } else if (player.key === keydown && player.y + player.height < canvas.height) {
+    player.y += game_velocity / multiplier;
   }
 };
 
@@ -113,6 +132,16 @@ setInterval(() => fps = (1000 / frameTime).toFixed(0), 1000);
 const writePoints = () => {
   ctx.fillStyle = "white";
   ctx.font = "10px Monospace";
+
+  ctx.textAlign = "left";
+  ctx.fillText(`[w] - up`, 20, 50);
+  ctx.fillText(`[s] - down`, 20, 60);
+  ctx.fillText(`${player_1.bot ? "Bot" : "Player 1"} controlling`, 20, 30)
+
+  ctx.textAlign = "right";
+  ctx.fillText(`up - [▲]`, canvas.width - 20, 50);
+  ctx.fillText(`down - [▼]`, canvas.width - 20, 60);
+  ctx.fillText(`${player_2.bot ? "Bot" : "Player 2"} controlling`, canvas.width - 20, 30)
 
   ctx.textAlign = "center";
   if (fps > 0) {
