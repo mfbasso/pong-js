@@ -1,16 +1,14 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const player_defaults = {
-  width: 20,
-  height: 200,
+  width: 10,
+  height: 100,
   color: "white",
   key: undefined,
 };
 let player_1, player_2, ball;
 
 const setup = () => {
-  // canvas.width = window.innerWidth;
-  // canvas.height = window.innerHeight;
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "white";
@@ -97,12 +95,12 @@ const startGame = () => {
 
 const playerMoviments = (player, keyUp, keydown) => {
   if (player.key === keyUp && player.y > 0) {
-    player.y -= 10;
+    player.y -= 5;
   } else if (
     player.key === keydown &&
     player.y + player.height < canvas.height
   ) {
-    player.y += 10;
+    player.y += 5;
   }
 };
 
@@ -166,7 +164,6 @@ const tick = () => {
   });
   clear();
   draw();
-  console.log("Tick");
 };
 
 setup();
