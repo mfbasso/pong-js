@@ -5,8 +5,12 @@ const player_defaults = {
   height: 100,
   color: "white",
   key: undefined,
+  bot: true,
 };
-let player_1, player_2, ball;
+let player_1, player_2, ball, game_velocity = 5;
+
+var filterStrength = 20;
+var frameTime = (1000 / 60), fps = 0, lastLoop, thisLoop;
 
 const setup = () => {
   ctx.fillStyle = "black";
@@ -65,53 +69,92 @@ const initPlayers = () => {
 const startListeners = () => {
   document.addEventListener("keydown", ({ keyCode }) => {
     if (keyCode === 87 || keyCode === 83) {
+      player_1.bot = false;
       player_1.key = keyCode;
     }
 
     if (keyCode === 38 || keyCode === 40) {
+      player_2.bot = false;
       player_2.key = keyCode;
     }
   });
 
   document.addEventListener("keyup", ({ keyCode }) => {
     if (keyCode === 87 || keyCode === 83) {
+      player_1.bot = false;
       player_1.key = undefined;
     }
 
     if (keyCode === 38 || keyCode === 40) {
+      player_2.bot = false;
       player_2.key = undefined;
     }
   });
 };
 
 const startGame = () => {
+  lastLoop = new Date;
   canvas.removeEventListener("click", startGame);
   clear();
   initBall();
   initPlayers();
   startListeners();
-  setInterval(tick, 1000 / 60);
+  tick();
 };
 
 const playerMoviments = (player, keyUp, keydown) => {
+  let multiplier = 3;
+  if (player.bot) {
+    if (player === player_1 && ball.dx === -1) {
+      multiplier = 1;
+    } else if (player === player_2 && ball.dx === +1) {
+      multiplier = 1;
+    }
+
+    if (player.y > ball.y - (player.height / 2)) {
+      player.key = keyUp;
+    } else if (player.y < ball.y - (player.height / 2)) {
+      player.key = keydown;
+    }
+  } else {
+    multiplier = 1;
+  }
+
   if (player.key === keyUp && player.y > 0) {
-    player.y -= 5;
-  } else if (
-    player.key === keydown &&
-    player.y + player.height < canvas.height
-  ) {
-    player.y += 5;
+    player.y -= game_velocity / multiplier;
+  } else if (player.key === keydown && player.y + player.height < canvas.height) {
+    player.y += game_velocity / multiplier;
   }
 };
 
+setInterval(() => fps = (1000 / frameTime).toFixed(0), 1000);
+
 const writePoints = () => {
   ctx.fillStyle = "white";
+  ctx.font = "10px Monospace";
+
+  ctx.textAlign = "left";
+  ctx.fillText(`[w] - up`, 20, 50);
+  ctx.fillText(`[s] - down`, 20, 60);
+  ctx.fillText(`${player_1.bot ? "Bot" : "Player 1"} controlling`, 20, 30)
+
+  ctx.textAlign = "right";
+  ctx.fillText(`up - [▲]`, canvas.width - 20, 50);
+  ctx.fillText(`down - [▼]`, canvas.width - 20, 60);
+  ctx.fillText(`${player_2.bot ? "Bot" : "Player 2"} controlling`, canvas.width - 20, 30)
+
+  ctx.textAlign = "center";
+  if (fps > 0) {
+    ctx.fillText(`${fps} fps`, canvas.width / 2, 20)
+  }
+
   ctx.font = "30px Monospace";
   ctx.fillText(`${player_1.points}`, canvas.width / 2 - 100, 50);
   ctx.fillText(`${player_2.points}`, canvas.width / 2 + 100, 50);
 };
 
 const ballMoviments = ({ velocicy = 5 }) => {
+  game_velocity = velocicy * (60 / (1000 / (frameTime > 17 ? 17 : frameTime)));
   // Check if is colliding with the player 1
   if (
     ball.x >= player_1.x &&
@@ -152,11 +195,15 @@ const ballMoviments = ({ velocicy = 5 }) => {
     initBall();
   }
 
-  ball.x += velocicy * ball.dx;
-  ball.y += velocicy * ball.dy;
+  ball.x += game_velocity * ball.dx;
+  ball.y += game_velocity * ball.dy;
 };
 
 const tick = () => {
+  var thisFrameTime = (thisLoop = new Date) - lastLoop;
+  frameTime += (thisFrameTime - frameTime) / filterStrength;
+  lastLoop = thisLoop;
+
   playerMoviments(player_1, 87, 83);
   playerMoviments(player_2, 38, 40);
   ballMoviments({
@@ -164,6 +211,7 @@ const tick = () => {
   });
   clear();
   draw();
+  requestAnimationFrame(tick);
 };
 
 setup();
